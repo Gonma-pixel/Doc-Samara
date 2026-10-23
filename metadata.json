@@ -1,0 +1,6 @@
+{
+  "name": "Dra. Samara - Odontología Avanzada",
+  "description": "Clínica odontológica de alta precisión y estética dental dirigida por la Dra. Samara. Experiencia personalizada, tecnología 3D y cuidado sin dolor en un entorno de máxima pureza.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
