@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ToothSVG } from './ToothSVG';
-import { Sparkles, ChevronDown, ArrowDown, Volume2, VolumeX, Eye } from 'lucide-react';
+import { ThreeToothCanvas } from './ThreeToothCanvas';
+import { Sparkles, ArrowDown, Volume2, VolumeX, Rotate3d, Compass } from 'lucide-react';
 import { DentalService } from '../types';
 
 interface AnimatedToothHeroProps {
@@ -17,7 +17,6 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
   // openProgress ranges from 0.0 (closed) to 1.0 (fully open roots)
   const [openProgress, setOpenProgress] = useState<number>(0);
   const [manualScrub, setManualScrub] = useState<boolean>(false);
-  const [showAnatomy, setShowAnatomy] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,7 +27,7 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
   const playToothChime = (freq = 520) => {
     if (!soundEnabled) return;
     const now = Date.now();
-    if (now - lastSoundTimeRef.current < 250) return; // rate limit
+    if (now - lastSoundTimeRef.current < 250) return;
     lastSoundTimeRef.current = now;
 
     try {
@@ -100,9 +99,9 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex flex-col items-center justify-between pt-24 pb-12 px-4 sm:px-6 bg-gradient-to-b from-white via-[#FAFBFD] to-white overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-between pt-20 pb-10 px-4 sm:px-6 bg-gradient-to-b from-white via-[#FAFBFD] to-white overflow-hidden"
     >
-      {/* Background ambient lighting - soft clinical white / pearl crystal */}
+      {/* Background ambient lighting - pure clinical white / crystal pearl */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-cyan-50/70 via-sky-50/40 to-slate-50/60 rounded-full blur-3xl opacity-80" />
         <div className="absolute bottom-10 left-10 w-96 h-96 bg-cyan-50/40 rounded-full blur-2xl" />
@@ -118,54 +117,51 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
       </div>
 
       {/* Hero Header Content */}
-      <div className="relative z-10 text-center max-w-3xl mx-auto pt-4 pb-2">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-xs mb-4 text-xs font-medium text-slate-600">
+      <div className="relative z-10 text-center max-w-3xl mx-auto pt-2 pb-1">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-xs mb-3 text-xs font-medium text-slate-600">
           <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
-          <span>Odontología de Precisión & Estética Biomimética</span>
+          <span>Odontología de Precisión & Escaneo 3D Digital</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 font-display text-balance">
           Dra. Samara
         </h1>
-        <p className="mt-3 text-lg sm:text-xl text-slate-600 font-light max-w-xl mx-auto leading-relaxed">
-          Cuidado dental sin dolor, estética natural y tecnología 3D en un espacio de pureza y bienestar.
+        <p className="mt-2 text-base sm:text-lg text-slate-600 font-light max-w-xl mx-auto leading-relaxed">
+          Cuidado dental sin dolor, estética natural y tecnología 3D en un entorno de pureza y bienestar.
         </p>
       </div>
 
-      {/* Center Interactive Tooth Canvas */}
-      <div className="relative z-10 w-full max-w-4xl flex flex-col items-center my-auto py-4">
-        {/* Central Animated Tooth with floating physics */}
-        <div className="relative group cursor-pointer" onClick={() => playToothChime(750)}>
+      {/* Center 3D Liquid Glass Tooth Canvas */}
+      <div className="relative z-10 w-full max-w-4xl flex flex-col items-center my-auto py-2">
+        {/* Real 3D Molar Canvas with Liquid Glass shader and 360 drag */}
+        <div className="relative group">
           {/* Subtle gleam glow effect behind the tooth */}
           <div
-            className="absolute inset-0 -inset-x-8 bg-cyan-100/40 rounded-full blur-2xl transition-opacity duration-300 pointer-events-none"
+            className="absolute inset-0 -inset-x-8 bg-cyan-100/40 rounded-full blur-3xl transition-opacity duration-300 pointer-events-none"
             style={{ opacity: 0.35 + openProgress * 0.45 }}
           />
 
-          {/* Tooth Component */}
-          <div className={`${openProgress < 0.15 ? 'animate-tooth-float' : ''} transition-transform`}>
-            <ToothSVG
-              openProgress={openProgress}
-              showAnatomyLabels={showAnatomy}
-              className="w-72 sm:w-80 h-80 sm:h-96"
-            />
-          </div>
+          <ThreeToothCanvas
+            openProgress={openProgress}
+            onInteraction={() => playToothChime(620)}
+            className="w-full flex justify-center"
+          />
         </div>
 
-        {/* Dynamic Services Emergence: Revealed directly from parted roots */}
+        {/* Dynamic Services Emergence: Revealed directly from parted roots as user scrolls */}
         <div
-          className="w-full max-w-3xl mt-4 transition-all duration-300"
+          className="w-full max-w-3xl mt-2 transition-all duration-300"
           style={{
-            opacity: Math.max(0, (openProgress - 0.25) / 0.75),
-            transform: `translateY(${(1 - openProgress) * 30}px)`,
-            pointerEvents: openProgress > 0.35 ? 'auto' : 'none'
+            opacity: Math.max(0, (openProgress - 0.2) / 0.8),
+            transform: `translateY(${(1 - openProgress) * 24}px)`,
+            pointerEvents: openProgress > 0.25 ? 'auto' : 'none'
           }}
         >
-          <div className="text-center mb-4">
+          <div className="text-center mb-3">
             <span className="text-xs uppercase tracking-widest text-cyan-600 font-semibold">
               Servicios revelados desde la raíz
             </span>
-            <p className="text-sm text-slate-600 mt-0.5">
+            <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
               Haz clic en cualquiera de los tratamientos destacados para ver detalles o agendar
             </p>
           </div>
@@ -201,10 +197,10 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
         </div>
 
         {/* Dynamic Scroll & Interactive Root Scrubber Control */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center gap-4 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-slate-200/70 shadow-xs">
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-medium text-slate-700 whitespace-nowrap">
-              Apertura de raíces:
+              Apertura de raíces 3D:
             </span>
             <input
               type="range"
@@ -226,23 +222,11 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
           {/* Interactive Feature Toggles */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowAnatomy(!showAnatomy)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                showAnatomy
-                  ? 'bg-cyan-50 text-cyan-700 border border-cyan-200'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>{showAnatomy ? 'Ocultar anatomía' : 'Ver anatomía'}</span>
-            </button>
-
-            <button
               onClick={() => {
                 setSoundEnabled(!soundEnabled);
                 if (!soundEnabled) playToothChime(580);
               }}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
+              className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                 soundEnabled
                   ? 'text-cyan-700 bg-cyan-50 border border-cyan-200'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
@@ -257,10 +241,10 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
       </div>
 
       {/* Bottom Scroll Indicator & Direct Action */}
-      <div className="relative z-10 flex flex-col items-center gap-3 pt-2">
+      <div className="relative z-10 flex flex-col items-center gap-3 pt-1">
         <button
           onClick={handleScrollToServices}
-          className="group inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-cyan-700 transition-colors"
+          className="group inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-cyan-700 transition-colors cursor-pointer"
         >
           <span>Desliza para explorar todos los servicios</span>
           <ArrowDown className="w-3.5 h-3.5 group-hover:translate-y-1 transition-transform" />
