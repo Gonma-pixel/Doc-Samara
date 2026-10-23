@@ -4,15 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      try {
-        var _cf = window.fetch;
-        Object.defineProperty(window, 'fetch', {
-          get: function() { return _cf; },
-          set: function(fn) { _cf = fn; },
-          configurable: true,
-          enumerable: true
-        });
-      } catch (_) {}
+      (function() {
+        try {
+          var realFetch = window.fetch;
+          var activeFetch = function() {
+            return realFetch.apply(window, arguments);
+          };
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return activeFetch;
+            },
+            set: function(val) {
+              activeFetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (_) {}
+      })();
     </script>
     <title>Dra. Samara | Odontología Avanzada & Estética Dental</title>
     <meta name="description" content="Clínica odontológica de alta precisión y estética dental dirigida por la Dra. Samara. Experiencia personalizada, tecnología 3D y cuidado sin dolor en un entorno de máxima pureza." />

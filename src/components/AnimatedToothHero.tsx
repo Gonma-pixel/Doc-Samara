@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ThreeToothCanvas } from './ThreeToothCanvas';
-import { ToothSVG } from './ToothSVG';
-import { ErrorBoundary } from './ErrorBoundary';
+import { LiquidGlassTooth3D } from './LiquidGlassTooth3D';
 import { Sparkles, ArrowDown, Volume2, VolumeX, Rotate3d, Compass } from 'lucide-react';
 import { DentalService } from '../types';
 
@@ -137,27 +135,11 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
       <div className="relative z-10 w-full max-w-4xl flex flex-col items-center my-auto py-2">
         {/* Real 3D Molar Canvas with Liquid Glass shader and 360 drag */}
         <div className="relative group">
-          {/* Subtle gleam glow effect behind the tooth */}
-          <div
-            className="absolute inset-0 -inset-x-8 bg-cyan-100/40 rounded-full blur-3xl transition-opacity duration-300 pointer-events-none"
-            style={{ opacity: 0.35 + openProgress * 0.45 }}
+          <LiquidGlassTooth3D
+            openProgress={openProgress}
+            onInteraction={() => playToothChime(620)}
+            className="w-full flex justify-center"
           />
-
-          <ErrorBoundary
-            fallback={
-              <ToothSVG
-                openProgress={openProgress}
-                showAnatomyLabels={false}
-                className="w-72 sm:w-80 h-80 sm:h-96"
-              />
-            }
-          >
-            <ThreeToothCanvas
-              openProgress={openProgress}
-              onInteraction={() => playToothChime(620)}
-              className="w-full flex justify-center"
-            />
-          </ErrorBoundary>
         </div>
 
         {/* Dynamic Services Emergence: Revealed directly from parted roots as user scrolls */}
