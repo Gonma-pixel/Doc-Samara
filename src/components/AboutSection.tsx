@@ -1,5 +1,7 @@
 import React from 'react';
 import { Award, HeartHandshake, Sparkles, CheckCircle2 } from 'lucide-react';
+import samaraPortrait from '../assets/images/samara_portrait_1792793564353.jpg';
+import clinicInterior from '../assets/images/dental_clinic_interior_1792793564246.jpg';
 
 interface AboutSectionProps {
   onBookAppointment: () => void;
@@ -13,7 +15,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onBookAppointment })
         <div className="lg:col-span-5 relative">
           <div className="relative mx-auto max-w-md rounded-3xl overflow-hidden shadow-xl border border-slate-200/90 bg-white">
             <img
-              src="/src/assets/images/samara_portrait_1792793564353.jpg"
+              src={samaraPortrait}
               alt="Dra. Samara en su clínica dental"
               referrerPolicy="no-referrer"
               className="w-full aspect-[3/4] object-cover object-top"
@@ -90,7 +92,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onBookAppointment })
           <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center gap-4">
             <div className="w-full sm:w-48 h-32 rounded-xl overflow-hidden shrink-0 border border-slate-100">
               <img
-                src="/src/assets/images/dental_clinic_interior_1792793564246.jpg"
+                src={clinicInterior}
                 alt="Instalaciones de la clínica dental de Dra. Samara"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"

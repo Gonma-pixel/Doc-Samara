@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Sparkles, SlidersHorizontal } from 'lucide-react';
+import smileResultImg from '../assets/images/smile_aesthetic_result_1792793564651.jpg';
 
 export const BeforeAfterSlider: React.FC = () => {
   const [sliderPos, setSliderPos] = useState<number>(50); // percentage 0 to 100
@@ -80,7 +81,7 @@ export const BeforeAfterSlider: React.FC = () => {
             >
               {/* After Image (Full Background) */}
               <img
-                src="/src/assets/images/smile_aesthetic_result_1792793564651.jpg"
+                src={smileResultImg}
                 alt="Sonrisa después del blanqueamiento dental con la Dra. Samara"
                 referrerPolicy="no-referrer"
                 className="absolute inset-0 w-full h-full object-cover"
@@ -92,7 +93,7 @@ export const BeforeAfterSlider: React.FC = () => {
                 style={{ width: `${sliderPos}%` }}
               >
                 <img
-                  src="/src/assets/images/smile_aesthetic_result_1792793564651.jpg"
+                  src={smileResultImg}
                   alt="Sonrisa antes del tratamiento"
                   referrerPolicy="no-referrer"
                   className="absolute inset-0 w-full h-full object-cover max-w-none"
