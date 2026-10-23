@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Rotate3d, RefreshCw } from 'lucide-react';
+import { ToothSVG } from './ToothSVG';
 
 interface ThreeToothCanvasProps {
   openProgress: number; // 0 (closed) to 1 (roots fully open)
@@ -17,6 +18,7 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [glassStyle, setGlassStyle] = useState<'liquid_cyan' | 'pure_crystal' | 'pearl_enamel'>('liquid_cyan');
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [webGlSupported, setWebGlSupported] = useState<boolean>(true);
 
   // References across render ticks
   const toothMasterGroupRef = useRef<THREE.Group | null>(null);
@@ -27,7 +29,7 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
   const requestRef = useRef<number>(0);
 
   // Drag rotation kinematics
-  const rotationVelocityRef = useRef<{ x: number; y: number }>({ x: 0, y: 0.006 });
+  const rotationVelocityRef = useRef<{ x: number; y: number }>({ x: 0, y: 0.007 });
   const isPointerDownRef = useRef<boolean>(false);
   const lastPointerPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -35,13 +37,11 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
   useEffect(() => {
     const t = Math.max(0, Math.min(1, openProgress));
     if (leftRootGroupRef.current) {
-      // Articulate left root outward
       leftRootGroupRef.current.rotation.z = -t * 0.45;
       leftRootGroupRef.current.position.x = -0.32 - t * 0.48;
       leftRootGroupRef.current.position.y = -0.12 - t * 0.04;
     }
     if (rightRootGroupRef.current) {
-      // Articulate right root outward
       rightRootGroupRef.current.rotation.z = t * 0.45;
       rightRootGroupRef.current.position.x = 0.32 + t * 0.48;
       rightRootGroupRef.current.position.y = -0.12 - t * 0.04;
@@ -60,42 +60,27 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
   useEffect(() => {
     glassMaterialsRef.current.forEach((mat) => {
       if (glassStyle === 'liquid_cyan') {
-        mat.color.setHex(0xf0f9ff);
-        mat.transmission = 0.86;
-        mat.roughness = 0.05;
-        mat.ior = 1.54;
-        mat.thickness = 2.4;
-        mat.attenuationColor.setHex(0x0ea5e9);
-        mat.attenuationDistance = 0.85;
+        mat.color.setHex(0xe0f7fa);
+        mat.opacity = 0.85;
+        mat.roughness = 0.04;
         mat.clearcoat = 1.0;
         mat.clearcoatRoughness = 0.02;
-        mat.iridescence = 0.5;
-        mat.opacity = 1;
+        mat.iridescence = 0.55;
       } else if (glassStyle === 'pure_crystal') {
         mat.color.setHex(0xffffff);
-        mat.transmission = 0.92;
+        mat.opacity = 0.88;
         mat.roughness = 0.02;
-        mat.ior = 1.62;
-        mat.thickness = 2.0;
-        mat.attenuationColor.setHex(0x38bdf8);
-        mat.attenuationDistance = 1.4;
         mat.clearcoat = 1.0;
         mat.clearcoatRoughness = 0.01;
         mat.iridescence = 0.35;
-        mat.opacity = 1;
       } else {
         // Pearl Enamel
         mat.color.setHex(0xffffff);
-        mat.transmission = 0.35;
-        mat.roughness = 0.15;
-        mat.ior = 1.52;
-        mat.thickness = 1.6;
-        mat.attenuationColor.setHex(0xffffff);
-        mat.attenuationDistance = 2.0;
+        mat.opacity = 0.95;
+        mat.roughness = 0.16;
         mat.clearcoat = 0.95;
         mat.clearcoatRoughness = 0.08;
         mat.iridescence = 0.75;
-        mat.opacity = 1;
       }
       mat.needsUpdate = true;
     });
@@ -105,6 +90,14 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
+
+    // Check basic WebGL support without destructive loseContext
+    const canvasTest = document.createElement('canvas');
+    const gl = canvasTest.getContext('webgl2') || canvasTest.getContext('webgl');
+    if (!gl) {
+      setWebGlSupported(false);
+      return;
+    }
 
     const width = container.clientWidth || 340;
     const height = container.clientHeight || 360;
@@ -123,95 +116,61 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
       renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true,
-        powerPreference: 'high-performance'
+        powerPreference: 'default'
       });
     } catch {
-      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+      setWebGlSupported(false);
+      return;
     }
 
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.25;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 4. Procedural Studio Cube Environment for Glass Refraction
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, {
-      generateMipmaps: true,
-      minFilter: THREE.LinearMipmapLinearFilter,
-      magFilter: THREE.LinearFilter
-    });
-    const cubeCamera = new THREE.CubeCamera(0.1, 10, cubeRenderTarget);
-    const envScene = new THREE.Scene();
-    envScene.background = new THREE.Color(0xf8fafc);
-
-    const boxMatKey = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const boxMatRim = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-    const boxMatSoft = new THREE.MeshBasicMaterial({ color: 0x0284c7 });
-
-    const keySoftbox = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), boxMatKey);
-    keySoftbox.position.set(0, 5, 4);
-    keySoftbox.lookAt(0, 0, 0);
-    envScene.add(keySoftbox);
-
-    const rimSoftbox = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), boxMatRim);
-    rimSoftbox.position.set(-5, -2, -4);
-    rimSoftbox.lookAt(0, 0, 0);
-    envScene.add(rimSoftbox);
-
-    const fillSoftbox = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), boxMatSoft);
-    fillSoftbox.position.set(5, 2, -4);
-    fillSoftbox.lookAt(0, 0, 0);
-    envScene.add(fillSoftbox);
-
-    cubeCamera.update(renderer, envScene);
-    scene.environment = cubeRenderTarget.texture;
-
-    // 5. Studio Lighting Rig
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    // 4. Studio Lighting Rig for Liquid Glass Specular Shimmer
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const mainKeyLight = new THREE.DirectionalLight(0xffffff, 2.8);
+    const mainKeyLight = new THREE.DirectionalLight(0xffffff, 3.0);
     mainKeyLight.position.set(4, 5, 6);
     scene.add(mainKeyLight);
 
-    const fillCyanLight = new THREE.DirectionalLight(0x38bdf8, 2.2);
+    const fillCyanLight = new THREE.DirectionalLight(0x38bdf8, 2.4);
     fillCyanLight.position.set(-5, 3, 4);
     scene.add(fillCyanLight);
 
-    const backRimLight = new THREE.DirectionalLight(0x0ea5e9, 3.2);
+    const backRimLight = new THREE.DirectionalLight(0x0284c7, 3.4);
     backRimLight.position.set(0, -3, -6);
     scene.add(backRimLight);
 
-    const bottomGlowLight = new THREE.PointLight(0x0284c7, 1.5, 10);
+    const bottomGlowLight = new THREE.PointLight(0x0ea5e9, 2.0, 10);
     bottomGlowLight.position.set(0, -1.8, 1);
     scene.add(bottomGlowLight);
 
-    // 6. Liquid Glass Physical Material
+    // 5. Liquid Glass Physical Material
+    // High-performance glass optics (zero GPU ReadPixels stall, works on mobile & desktop)
     const liquidGlassMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0xf0f9ff),
-      transmission: 0.86,
-      roughness: 0.05,
+      color: new THREE.Color(0xe0f7fa),
+      transparent: true,
+      opacity: 0.85,
+      roughness: 0.04,
       metalness: 0.05,
       ior: 1.54,
-      thickness: 2.4,
+      reflectivity: 0.95,
       clearcoat: 1.0,
       clearcoatRoughness: 0.02,
-      attenuationColor: new THREE.Color(0x0ea5e9),
-      attenuationDistance: 0.85,
-      iridescence: 0.5,
-      iridescenceIOR: 1.4,
-      specularColor: new THREE.Color(0xffffff),
-      transparent: true,
-      opacity: 1
+      iridescence: 0.55,
+      iridescenceIOR: 1.35,
+      specularColor: new THREE.Color(0xffffff)
     });
     glassMaterialsRef.current = [liquidGlassMat];
 
-    // 7. Master Tooth Group
+    // 6. Master Tooth Group
     const toothMasterGroup = new THREE.Group();
-    // Scale group to comfortably fit within 300px-360px viewport
     toothMasterGroup.scale.set(0.72, 0.72, 0.72);
     toothMasterGroup.position.set(0, 0.35, 0);
     scene.add(toothMasterGroup);
@@ -221,13 +180,13 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
     // ANATOMIC MOLAR CROWN (CORONA REDONDEADA ORGÁNICA)
     // -------------------------------------------------------------
     const crownHeight = 1.35;
-    const crownGeom = new THREE.CylinderGeometry(1.18, 0.88, crownHeight, 64, 40);
+    const crownGeom = new THREE.CylinderGeometry(1.18, 0.88, crownHeight, 48, 32);
     const crownPos = crownGeom.attributes.position;
     const p = new THREE.Vector3();
 
     for (let i = 0; i < crownPos.count; i++) {
       p.fromBufferAttribute(crownPos, i);
-      const ny = p.y / (crownHeight / 2); // -1 (base) to +1 (top)
+      const ny = p.y / (crownHeight / 2);
       const radialDist = Math.hypot(p.x, p.z);
 
       // Round the sharp top rim edge
@@ -238,7 +197,6 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
 
       // Occlusal chewing table sculpting
       if (p.y > 0.25) {
-        // 4 distinct anatomic molar cusps
         const dMB = Math.hypot(p.x - 0.52, p.z - 0.52);
         const dDB = Math.hypot(p.x + 0.52, p.z - 0.52);
         const dML = Math.hypot(p.x - 0.52, p.z + 0.52);
@@ -248,8 +206,6 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
         const cuspDB = Math.max(0, 0.36 * Math.exp(-dDB * 3.2));
         const cuspML = Math.max(0, 0.40 * Math.exp(-dML * 3.2));
         const cuspDL = Math.max(0, 0.35 * Math.exp(-dDL * 3.2));
-
-        // Central developmental pit
         const centralFossa = -0.22 * Math.exp(-radialDist * 3.0);
 
         p.y += cuspMB + cuspDB + cuspML + cuspDL + centralFossa;
@@ -293,7 +249,7 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
           ];
 
       const curve = new THREE.CatmullRomCurve3(points);
-      const geom = new THREE.TubeGeometry(curve, 36, 0.38, 24, false);
+      const geom = new THREE.TubeGeometry(curve, 32, 0.38, 20, false);
       const pos = geom.attributes.position;
       const v = new THREE.Vector3();
 
@@ -332,7 +288,7 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
     // -------------------------------------------------------------
     // LUMINOUS PULP CORE & CANALS (VISIBLES A TRAVÉS DEL VIDRIO)
     // -------------------------------------------------------------
-    const pulpGeom = new THREE.SphereGeometry(0.44, 24, 24);
+    const pulpGeom = new THREE.SphereGeometry(0.44, 20, 20);
     pulpGeom.scale(1.1, 0.85, 1.1);
     const pulpMat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
@@ -438,11 +394,9 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
             );
           }
 
-          // Gentle liquid levitation
           toothMasterGroup.position.y = 0.35 + Math.sin(currentTime * 0.0018) * 0.05;
         }
 
-        // Clamp vertical pitch tilt
         toothMasterGroup.rotation.x = THREE.MathUtils.clamp(
           toothMasterGroup.rotation.x,
           -Math.PI * 0.28,
@@ -471,7 +425,6 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(requestRef.current);
       renderer.dispose();
-      cubeRenderTarget.dispose();
       crownGeom.dispose();
       leftRootGeom.dispose();
       rightRootGeom.dispose();
@@ -483,6 +436,15 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
       }
     };
   }, [autoRotate]);
+
+  // Fallback to SVG if WebGL is unavailable on device
+  if (!webGlSupported) {
+    return (
+      <div className={`relative flex flex-col items-center select-none ${className}`}>
+        <ToothSVG openProgress={openProgress} showAnatomyLabels={false} className="w-72 sm:w-80 h-80 sm:h-96" />
+      </div>
+    );
+  }
 
   // -------------------------------------------------------------
   // 360° POINTER INTERACTION (DRAG & ROTATE)
@@ -532,12 +494,12 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
 
   return (
     <div className={`relative flex flex-col items-center select-none ${className}`}>
-      {/* Visual Radial Halo backdrop: ensures liquid glass edges pop with crystalline brilliance against white */}
+      {/* Visual Radial Halo backdrop */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[280px] sm:w-[340px] h-[280px] sm:h-[340px] rounded-full bg-gradient-to-tr from-cyan-100/60 via-sky-100/35 to-blue-50/25 blur-2xl opacity-90" />
       </div>
 
-      {/* 3D WebGL Canvas Container: sized compactly so the entire tooth is fully framed */}
+      {/* 3D WebGL Canvas */}
       <div
         ref={mountRef}
         onPointerDown={handlePointerDown}
@@ -560,7 +522,6 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
 
       {/* Interactive Quick Bar */}
       <div className="relative z-10 flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200/90 shadow-xs text-xs">
-        {/* Toggle Auto Rotation */}
         <button
           type="button"
           onClick={() => setAutoRotate(!autoRotate)}
@@ -575,7 +536,6 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
           <span>{autoRotate ? 'Giro Activo' : 'Giro Manual'}</span>
         </button>
 
-        {/* Reset Front View */}
         <button
           type="button"
           onClick={resetFrontView}
@@ -588,7 +548,6 @@ export const ThreeToothCanvas: React.FC<ThreeToothCanvasProps> = ({
 
         <div className="h-3 w-[1px] bg-slate-200" />
 
-        {/* Glass style selector */}
         <div className="flex items-center gap-1">
           <button
             type="button"

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ThreeToothCanvas } from './ThreeToothCanvas';
+import { ToothSVG } from './ToothSVG';
+import { ErrorBoundary } from './ErrorBoundary';
 import { Sparkles, ArrowDown, Volume2, VolumeX, Rotate3d, Compass } from 'lucide-react';
 import { DentalService } from '../types';
 
@@ -141,11 +143,21 @@ export const AnimatedToothHero: React.FC<AnimatedToothHeroProps> = ({
             style={{ opacity: 0.35 + openProgress * 0.45 }}
           />
 
-          <ThreeToothCanvas
-            openProgress={openProgress}
-            onInteraction={() => playToothChime(620)}
-            className="w-full flex justify-center"
-          />
+          <ErrorBoundary
+            fallback={
+              <ToothSVG
+                openProgress={openProgress}
+                showAnatomyLabels={false}
+                className="w-72 sm:w-80 h-80 sm:h-96"
+              />
+            }
+          >
+            <ThreeToothCanvas
+              openProgress={openProgress}
+              onInteraction={() => playToothChime(620)}
+              className="w-full flex justify-center"
+            />
+          </ErrorBoundary>
         </div>
 
         {/* Dynamic Services Emergence: Revealed directly from parted roots as user scrolls */}
